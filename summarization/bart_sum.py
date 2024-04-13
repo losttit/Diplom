@@ -1,4 +1,5 @@
 from transformers import pipeline
+from summarization.translator import translate_to_russian, translate_to_english
 
 # Разделение лекции на части по 300 слов(берутся полные предложения до точки) для лучшей генерации конспектов
 def split_text(text, word_limit):
@@ -24,10 +25,16 @@ def bart_sum(lecture_text): # Обученная модель машинного
     summaries = []
 
     for i, part in enumerate(parts):
-        word_count = len(part.split())
+        # Переводим каждую часть на английский
+        part_in_english = translate_to_english(part)
+        word_count = len(part_in_english.split())
         min_length = word_count // 3
         print(f"Часть {i+1}. Количество слов: {word_count}")
-        summary = summarizer(part, do_sample=False, min_length=min_length, max_length=min_length+50)
-        summaries.append(summary[0]['summary_text'])
+        summary = summarizer(part_in_english, do_sample=False, min_length=min_length, max_length=min_length+50)
+        # summaries.append(summary[0]['summary_text']) # На английском
+        # Переводим сокращенный текст обратно на русский
+        summary_in_russian = translate_to_russian(summary[0]['summary_text'])
+        summary_in_russian = summary_in_russian.replace('&quot;', '"')
+        summaries.append(summary_in_russian)
 
     return ' '.join(summaries)
