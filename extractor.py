@@ -3,6 +3,7 @@ import docx2txt
 from PyPDF2 import PdfReader
 from docx import Document
 
+
 # Извлечение данных из файлов формата PDF/docx
 def extract_text(filename):
     if filename.endswith('.pdf'):
