@@ -15,7 +15,6 @@ def split_text(text, word_limit):
             parts.append(' '.join(temp_part))
             temp_part = []
             word_count = 0
-
     if temp_part:
         parts.append(' '.join(temp_part))
     return parts
@@ -38,5 +37,4 @@ def bart_sum(lecture_text):  # Обученная модель машинног�
         summary_in_russian = translate_to_russian(summary[0]['summary_text'])
         summary_in_russian = summary_in_russian.replace('&quot;', '"')
         summaries.append(summary_in_russian)
-
     return ' '.join(summaries)
