@@ -1,15 +1,17 @@
+import base64
 import string
+
+from Text2ImageAPI import Text2ImageAPI
 from extractor import *
 from summa.bart_sum import bart_sum, split_text
 from summa.translator import translate_to_english
 import random
 from nltk.tokenize import sent_tokenize, word_tokenize
-from diffusers import StableDiffusionPipeline
-import torch
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import customtkinter as ctk
+from CTkMessagebox import CTkMessagebox
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("green")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -54,21 +56,31 @@ class Application(ctk.CTk):
         self.file_path.delete(0, ctk.END)
         self.file_path.insert(0, file_path)
 
-        # Получение расширения из выпадающего списка
-        file_type = self.file_type.get()
-        if file_type == "pdf":
-            # Do something for PDF files
-            print("pdf")
-            pass
-        elif file_type == "docx":
-            # Do something for DOCX files
-            print("docx")
-            pass
-
     def generate_summary(self):
         file_path = self.file_path.get()
         new_title = self.title_entry.get()
-        main(file_path, new_title)
+        file_type = self.file_type.get()
+
+        if not file_path.endswith(('.pdf', '.docx')):
+            CTkMessagebox(title="Ошибка", message="Выберите файл docx или pdf", icon="error")
+            return
+
+        try:
+            if file_type == "pdf":
+                print("Генерация конспекта для лекции с расширением PDF")
+                sum_text, question_text = main(file_path, new_title)
+                add_pdf(sum_text + "\n\n" + question_text, new_title)
+
+                CTkMessagebox(title="Успех", message="Генерация конспекта прошла успешно!", icon="check")
+            elif file_type == "docx":
+                print("Генерация конспекта для лекции с расширением DOCX")
+                sum_text, question_text = main(file_path, new_title)
+                add_docx(sum_text + "\n\n" + question_text, new_title)
+
+                CTkMessagebox(title="Успех", message="Генерация конспекта прошла успешно!", icon="check")
+        except Exception as e:
+            print(f"Произошла ошибка: {e}")
+            CTkMessagebox(title="Ошибка", message="Произошла ошибка", icon="error")
 
 
 def get_main_phrase(text: str) -> str:
@@ -106,11 +118,15 @@ def main(file_path, new_title):
         print(main_phrases)
 
         # Генерация изображения
-        # model_id = "runwayml/stable-diffusion-v1-5"
-        # pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float32)
-        # pipe = pipe.to("cpu")
-        # image = pipe(main_phrases).images[0]
-        # image.save("resources/lecture.png")
+        api = Text2ImageAPI('https://api-key.fusionbrain.ai/')
+        model_id = api.get_model()
+        uuid = api.generate(main_phrases, model_id)
+        images = api.check_generation(uuid)
+        for image in images:
+            image_base64 = image
+            image_data = base64.b64decode(image_base64)
+            with open("resources/lecture.jpg", "wb") as file:
+                file.write(image_data)
 
         # Генерация вопросов
         questions = generate_questions(sum_text)
@@ -124,9 +140,10 @@ def main(file_path, new_title):
                 question_text += f"{string.ascii_lowercase[j - 1]}. {option}\n"
             question_text += "\n"
 
-        add_pdf(sum_text + "\n\n" + question_text, new_title)
+        return sum_text, question_text
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Произошла ошибка: {e}")
+        CTkMessagebox(title="Ошибка", message="Произошла ошибка", icon="error")
 
 
 if __name__ == "__main__":

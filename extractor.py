@@ -1,5 +1,6 @@
 import os
 import docx2txt
+from CTkMessagebox import CTkMessagebox
 from PyPDF2 import PdfReader
 from docx import Document
 from fpdf import FPDF
@@ -15,6 +16,7 @@ def extract_text(filename):
     elif filename.endswith('.docx'):
         return docx2txt.process(filename)
     else:
+        CTkMessagebox(title="Ошибка", message="Выберите файл docx или pdf", icon="error")
         print("Ошибка: Выберите файл docx или pdf")
         return ''
 
