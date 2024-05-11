@@ -2,6 +2,7 @@ import base64
 import string
 import random
 import customtkinter as ctk
+import re
 from plyer import notification
 from Text2ImageAPI import Text2ImageAPI
 from extractor import *
@@ -20,14 +21,14 @@ ctk.set_default_color_theme("blue")  # blue, dark-blue, green
 class Application(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.geometry("460x170")
+        self.geometry("460x180")
         self.title("Генератор конспектов")
         self.resizable(False, False)
         self.iconbitmap("resources/summary.ico")
 
         # Основной Frame
         main_frame = ctk.CTkFrame(self)  # fg_color="transparent"
-        main_frame.pack(pady=10)
+        main_frame.pack(pady=20)
 
         # Поле "Выберите файл"
         self.file_path = ctk.CTkEntry(main_frame, width=270, placeholder_text="Выберите файл")
@@ -112,7 +113,8 @@ def generate_questions(summary: str) -> list:
         words = [word for word in word_tokenize(sentence) if word.isalpha() and len(word) > 2]
         if len(words) > 5:
             random_word = random.choice(words)
-            question = sentence.replace(random_word, "_____")
+            word_pattern = r'\b' + re.escape(random_word) + r'\b'
+            question = re.sub(word_pattern, '_____', sentence)
             questions.append((question, random_word))
     return questions
 
@@ -144,7 +146,8 @@ def main(file_path):
         question_text = ""
         for i, (question, answer) in enumerate(questions, start=1):
             question_text += f"{i}. {question}?\n"
-            options = [answer] + random.sample([word for word in all_words if word != answer], 3)
+            options = [answer.lower()] + random.sample(
+                [word.lower() for word in all_words if word.lower() != answer.lower()], 3)
             random.shuffle(options)
             for j, option in enumerate(options, start=1):
                 question_text += f"{string.ascii_lowercase[j - 1]}. {option}\n"
