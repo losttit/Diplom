@@ -1,59 +1,57 @@
 import base64
 import string
-
+import random
+import customtkinter as ctk
 from plyer import notification
-
 from Text2ImageAPI import Text2ImageAPI
 from extractor import *
 from summa.bart_sum import bart_sum, split_text
 from summa.translator import translate_to_english
-import random
 from nltk.tokenize import sent_tokenize, word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 
-ctk.set_appearance_mode("light")
-ctk.set_default_color_theme("green")  # Themes: "blue" (standard), "green", "dark-blue"
+ctk.set_appearance_mode("dark")  # dark, light
+ctk.set_default_color_theme("blue")  # blue, dark-blue, green
 
 
 class Application(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.geometry("400x300")
+        self.geometry("460x170")
         self.title("Генератор конспектов")
         self.resizable(False, False)
         self.iconbitmap("resources/summary.ico")
 
-        # Создаем Frame для выбора файлов
-        file_frame = ctk.CTkFrame(self, fg_color=self.cget("bg"), bg_color=self.cget("bg"))
-        file_frame.pack(pady=10)
+        # Основной Frame
+        main_frame = ctk.CTkFrame(self)  # fg_color="transparent"
+        main_frame.pack(pady=10)
 
-        # Секция выбора файла
-        self.file_path = ctk.CTkEntry(file_frame, width=240, placeholder_text="Выберите файл")
-        self.file_path.pack(side="left", pady=10, padx=10)
-        self.file_button = ctk.CTkButton(file_frame, width=100, text="Выбор", command=self.select_file)
-        self.file_button.pack(side="left", pady=10)
+        # Поле "Выберите файл"
+        self.file_path = ctk.CTkEntry(main_frame, width=270, placeholder_text="Выберите файл")
+        self.file_path.grid(row=0, column=0, columnspan=2, sticky="w", pady=10, padx=(10, 0))
 
-        # Создаем Frame для нового заголовка
-        title_frame = ctk.CTkFrame(self, fg_color=self.cget("bg"), bg_color=self.cget("bg"))
-        title_frame.pack(pady=10)
+        # Кнопка "Выбор"
+        self.file_button = ctk.CTkButton(main_frame, width=100, text="Выбор", command=self.select_file)
+        self.file_button.grid(row=0, column=2, sticky="w", pady=10, padx=10)
 
-        # Секция нового заголовка и генерации конспекта
-        self.title_entry = ctk.CTkEntry(title_frame, width=240, placeholder_text="Новое название")
-        self.title_entry.pack(side="left", pady=10, padx=10)
+        # Поле "Новое название"
+        self.title_entry = ctk.CTkEntry(main_frame, width=380, placeholder_text="Новое название")
+        self.title_entry.grid(row=1, column=0, columnspan=3, sticky="w", pady=10, padx=10)
 
-        # Создаем Frame для кнопки генерации
-        gen_frame = ctk.CTkFrame(self, fg_color=self.cget("bg"), bg_color=self.cget("bg"))
-        gen_frame.pack(pady=10)
+        # "Выберите расширение файла"
+        self.file_type_label = ctk.CTkLabel(main_frame, text="Выберите расширение файла", width=190)
+        self.file_type_label.grid(row=2, column=0, sticky="w", pady=10, padx=(10, 0))
 
-        # Выпадающий список для расширения файла
-        self.file_type = ctk.CTkComboBox(gen_frame, values=["pdf", "docx"])
-        self.file_type.pack(side="left", pady=10, padx=10)
-        self.generate_button = ctk.CTkButton(gen_frame, width=100, text="Генерировать", command=self.generate_summary)
-        self.generate_button.pack(side="left", pady=10)
+        # Выпадающий список выбора расширения файла (pdf/docx)
+        self.file_type = ctk.CTkComboBox(main_frame, values=["pdf", "docx"], width=70)
+        self.file_type.grid(row=2, column=1, sticky="w", pady=10, padx=(10, 0))
+
+        # Кнопка "Генерировать"
+        self.generate_button = ctk.CTkButton(main_frame, width=100, text="Генерировать", command=self.generate_summary)
+        self.generate_button.grid(row=2, column=2, sticky="w", pady=10, padx=10)
 
     @staticmethod
     def show(message):
@@ -79,14 +77,14 @@ class Application(ctk.CTk):
                 self.show("Генерация конспекта для лекции с расширением PDF")
 
                 print("Генерация конспекта для лекции с расширением PDF")
-                sum_text, question_text = main(file_path, new_title)
+                sum_text, question_text = main(file_path)
                 add_pdf(sum_text + "\n\n" + question_text, new_title)
 
                 CTkMessagebox(title="Успех", message="Генерация конспекта прошла успешно!", icon="check")
             elif file_type == "docx":
                 self.show("Генерация конспекта для лекции с расширением DOCX")
                 print("Генерация конспекта для лекции с расширением DOCX")
-                sum_text, question_text = main(file_path, new_title)
+                sum_text, question_text = main(file_path)
                 add_docx(sum_text + "\n\n" + question_text, new_title)
 
                 CTkMessagebox(title="Успех", message="Генерация конспекта прошла успешно!", icon="check")
@@ -119,7 +117,7 @@ def generate_questions(summary: str) -> list:
     return questions
 
 
-def main(file_path, new_title):
+def main(file_path):
     try:
         docx_file_path = file_path
         lecture_text = extract_text(docx_file_path)

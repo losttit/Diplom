@@ -32,7 +32,6 @@ def bart_sum(lecture_text):  # Обученная модель машинног�
         min_length = word_count // 3
         print(f"Часть {i + 1}. Количество слов: {word_count}")
         summary = summarizer(part_in_english, do_sample=False, min_length=min_length, max_length=min_length + 50)
-        # summaries.append(summary[0]['summary_text']) # На английском
         # Переводим сокращенный текст обратно на русский
         summary_in_russian = translate_to_russian(summary[0]['summary_text'])
         summary_in_russian = summary_in_russian.replace('&quot;', '"')
