@@ -7,8 +7,8 @@ from docx.shared import Inches
 from fpdf import FPDF
 
 
-# Извлечение данных из файлов формата PDF/docx
 def extract_text(filename):
+    # Извлечение данных из файлов формата PDF/docx
     if filename.endswith('.pdf'):
         pdf_reader = PdfReader(filename)
         text = ''
@@ -24,17 +24,19 @@ def extract_text(filename):
 
 
 def add_docx(text, doc_name):
+    # Сохранение лекции в формате DOCX
     if os.path.exists(doc_name):
         os.remove(doc_name)
     if not doc_name.endswith('.docx'):
         doc_name += '.docx'
     doc = Document()
-    doc.add_picture("resources/lecture.jpg", width=Inches(6), height=Inches(6))
+    doc.add_picture("output/lecture.jpg", width=Inches(6), height=Inches(6))
     doc.add_paragraph(text)
-    doc.save("resources/" + doc_name)
+    doc.save("output/" + doc_name)
 
 
 def add_pdf(text, pdf_name):
+    # Сохранение лекции в формате PDF
     if os.path.exists(pdf_name):
         os.remove(pdf_name)
     if not pdf_name.endswith('.pdf'):
@@ -43,7 +45,7 @@ def add_pdf(text, pdf_name):
     pdf.add_page()
     pdf.add_font("DejaVuSans", "", "resources/DejaVuSans.ttf", uni=True)
     pdf.set_font("DejaVuSans", "", 12)
-    pdf.image("resources/lecture.jpg", x=10, y=10, w=190, h=190)
+    pdf.image("output/lecture.jpg", x=10, y=10, w=190, h=190)
     pdf.ln(200)
     pdf.multi_cell(0, 10, txt=text, align='L')
-    pdf.output("resources/" + pdf_name)
+    pdf.output("output/" + pdf_name)

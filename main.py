@@ -1,6 +1,8 @@
 import base64
 import string
 
+from plyer import notification
+
 from Text2ImageAPI import Text2ImageAPI
 from extractor import *
 from summa.bart_sum import bart_sum, split_text
@@ -22,6 +24,8 @@ class Application(ctk.CTk):
         super().__init__()
         self.geometry("400x300")
         self.title("Генератор конспектов")
+        self.resizable(False, False)
+        self.iconbitmap("resources/summary.ico")
 
         # Создаем Frame для выбора файлов
         file_frame = ctk.CTkFrame(self, fg_color=self.cget("bg"), bg_color=self.cget("bg"))
@@ -51,6 +55,11 @@ class Application(ctk.CTk):
         self.generate_button = ctk.CTkButton(gen_frame, width=100, text="Генерировать", command=self.generate_summary)
         self.generate_button.pack(side="left", pady=10)
 
+    @staticmethod
+    def show(message):
+        # Функция для вывода уведомлений
+        notification.notify(title="Генератор конспектов", message=message, app_icon="resources/summary.ico", timeout=1)
+
     def select_file(self):
         file_path = ctk.filedialog.askopenfilename()
         self.file_path.delete(0, ctk.END)
@@ -67,12 +76,15 @@ class Application(ctk.CTk):
 
         try:
             if file_type == "pdf":
+                self.show("Генерация конспекта для лекции с расширением PDF")
+
                 print("Генерация конспекта для лекции с расширением PDF")
                 sum_text, question_text = main(file_path, new_title)
                 add_pdf(sum_text + "\n\n" + question_text, new_title)
 
                 CTkMessagebox(title="Успех", message="Генерация конспекта прошла успешно!", icon="check")
             elif file_type == "docx":
+                self.show("Генерация конспекта для лекции с расширением DOCX")
                 print("Генерация конспекта для лекции с расширением DOCX")
                 sum_text, question_text = main(file_path, new_title)
                 add_docx(sum_text + "\n\n" + question_text, new_title)
@@ -99,7 +111,7 @@ def generate_questions(summary: str) -> list:
     sentences = sent_tokenize(summary)
     questions = []
     for sentence in sentences:
-        words = [word for word in word_tokenize(sentence) if word.isalpha()]
+        words = [word for word in word_tokenize(sentence) if word.isalpha() and len(word) > 2]
         if len(words) > 5:
             random_word = random.choice(words)
             question = sentence.replace(random_word, "_____")
@@ -125,7 +137,7 @@ def main(file_path, new_title):
         for image in images:
             image_base64 = image
             image_data = base64.b64decode(image_base64)
-            with open("resources/lecture.jpg", "wb") as file:
+            with open("output/lecture.jpg", "wb") as file:
                 file.write(image_data)
 
         # Генерация вопросов
