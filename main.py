@@ -13,6 +13,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from CTkMessagebox import CTkMessagebox
+from PIL import Image
 
 ctk.set_appearance_mode("dark")  # dark, light
 ctk.set_default_color_theme("blue")  # blue, dark-blue, green
@@ -21,25 +22,25 @@ ctk.set_default_color_theme("blue")  # blue, dark-blue, green
 class Application(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.geometry("460x180")
+        self.geometry("460x240")
         self.title("Генератор конспектов")
         self.resizable(False, False)
         self.iconbitmap("resources/summary.ico")
 
         # Основной Frame
-        main_frame = ctk.CTkFrame(self)  # fg_color="transparent"
-        main_frame.pack(pady=20)
+        main_frame = ctk.CTkFrame(self, width=410)  # fg_color="transparent"
+        main_frame.pack(pady=(20, 10))
 
         # Поле "Выберите файл"
         self.file_path = ctk.CTkEntry(main_frame, width=270, placeholder_text="Выберите файл")
         self.file_path.grid(row=0, column=0, columnspan=2, sticky="w", pady=10, padx=(10, 0))
 
         # Кнопка "Выбор"
-        self.file_button = ctk.CTkButton(main_frame, width=100, text="Выбор", command=self.select_file)
+        self.file_button = ctk.CTkButton(main_frame, width=110, text="Выбор", command=self.select_file)
         self.file_button.grid(row=0, column=2, sticky="w", pady=10, padx=10)
 
         # Поле "Новое название"
-        self.title_entry = ctk.CTkEntry(main_frame, width=380, placeholder_text="Новое название")
+        self.title_entry = ctk.CTkEntry(main_frame, width=390, placeholder_text="Новое название")
         self.title_entry.grid(row=1, column=0, columnspan=3, sticky="w", pady=10, padx=10)
 
         # "Выберите расширение файла"
@@ -51,8 +52,42 @@ class Application(ctk.CTk):
         self.file_type.grid(row=2, column=1, sticky="w", pady=10, padx=(10, 0))
 
         # Кнопка "Генерировать"
-        self.generate_button = ctk.CTkButton(main_frame, width=100, text="Генерировать", command=self.generate_summary)
+        self.generate_button = ctk.CTkButton(main_frame, width=110, text="Генерировать", command=self.generate_summary)
         self.generate_button.grid(row=2, column=2, sticky="w", pady=10, padx=10)
+
+        # Кнопка "Предпросмотр"
+        preview_frame = ctk.CTkFrame(self, width=410, height=50)
+        preview_frame.pack(pady=(0, 10))
+
+        self.preview_button = ctk.CTkButton(preview_frame, width=390, text="Предпросмотр", command=self.preview_summary,
+                                            state="disabled")
+        self.preview_button.place(relx=0.5, rely=0.5, anchor="center")
+
+    def preview_summary(self):
+        # Окно предпросмотра
+        preview_window = ctk.CTkToplevel(self)
+        preview_window.title("Предпросмотр")
+        preview_window.geometry("600x700")
+
+        # Frame предпросмотра
+        preview_frame = ctk.CTkFrame(preview_window)
+        preview_frame.pack(pady=20, padx=20)
+
+        # Загрузка изображения
+        image = ctk.CTkImage(light_image=Image.open("output/lecture.jpg"), size=(200, 200))
+        image_widget = ctk.CTkLabel(preview_frame, image=image, text="")
+        image_widget.pack(pady=10, padx=10)
+
+        # Текстовая коробка для конспекта и теста
+        summary_text_box = ctk.CTkTextbox(preview_frame, width=580, height=380)
+        summary_text_box.pack(pady=10, padx=10)
+
+        # Внесение конспекта и теста в текстовую коробку
+        summary_text_box.insert("1.0", self.sum_text + "\n\n" + self.question_text)
+
+        # Кнопка "Закрыть"
+        close_button = ctk.CTkButton(preview_window, text="Закрыть", command=preview_window.destroy)
+        close_button.pack(pady=20, padx=20)
 
     @staticmethod
     def show(message):
@@ -70,32 +105,37 @@ class Application(ctk.CTk):
         file_type = self.file_type.get()
 
         if not file_path.endswith(('.pdf', '.docx')):
-            CTkMessagebox(title="Ошибка", message="Выберите файл docx или pdf", icon="error")
+            CTkMessagebox(title="Ошибка", message="Выберите файл docx или pdf", icon="cancel")
             return
 
         try:
             if file_type == "pdf":
                 self.show("Генерация конспекта для лекции с расширением PDF")
-
                 print("Генерация конспекта для лекции с расширением PDF")
-                sum_text, question_text = main(file_path)
-                add_pdf(sum_text + "\n\n" + question_text, new_title)
+                self.sum_text, self.question_text = main(file_path)
+                add_pdf(self.sum_text + "\n\n" + self.question_text, new_title)
+
+                # Включение кнопки "Предпросмотр"
+                self.preview_button.configure(state="normal")
 
                 CTkMessagebox(title="Успех", message="Генерация конспекта прошла успешно!", icon="check")
             elif file_type == "docx":
                 self.show("Генерация конспекта для лекции с расширением DOCX")
                 print("Генерация конспекта для лекции с расширением DOCX")
-                sum_text, question_text = main(file_path)
-                add_docx(sum_text + "\n\n" + question_text, new_title)
+                self.sum_text, self.question_text = main(file_path)
+                add_docx(self.sum_text + "\n\n" + self.question_text, new_title)
+
+                # Включение кнопки "Предпросмотр"
+                self.preview_button.configure(state="normal")
 
                 CTkMessagebox(title="Успех", message="Генерация конспекта прошла успешно!", icon="check")
         except Exception as e:
             print(f"Произошла ошибка: {e}")
-            CTkMessagebox(title="Ошибка", message="Произошла ошибка", icon="error")
+            CTkMessagebox(title="Ошибка", message="Произошла ошибка", icon="cancel")
 
 
 def get_main_phrase(text: str) -> str:
-    """Извлекаем ключевые фразы из текста"""
+    # Извлечение ключевых фраз из текста
     lemmatizer = WordNetLemmatizer()
     text = ' '.join([lemmatizer.lemmatize(word) for word in word_tokenize(text)])
     vectorizer = TfidfVectorizer(max_features=2, stop_words=stopwords.words('english'))
@@ -105,7 +145,7 @@ def get_main_phrase(text: str) -> str:
 
 
 def generate_questions(summary: str) -> list:
-    """Генерация вопросов из конспекта"""
+    # Генерация вопросов из конспекта
     # Количество вопросов равно количеству предложений в тексте, которые содержат более 5 слов
     sentences = sent_tokenize(summary)
     questions = []
@@ -156,7 +196,7 @@ def main(file_path):
         return sum_text, question_text
     except Exception as e:
         print(f"Произошла ошибка: {e}")
-        CTkMessagebox(title="Ошибка", message="Произошла ошибка", icon="error")
+        CTkMessagebox(title="Ошибка", message="Произошла ошибка", icon="cancel")
 
 
 if __name__ == "__main__":

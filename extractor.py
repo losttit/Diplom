@@ -18,7 +18,7 @@ def extract_text(filename):
     elif filename.endswith('.docx'):
         return docx2txt.process(filename)
     else:
-        CTkMessagebox(title="Ошибка", message="Выберите файл docx или pdf", icon="error")
+        CTkMessagebox(title="Ошибка", message="Выберите файл docx или pdf", icon="cancel")
         print("Ошибка: Выберите файл docx или pdf")
         return ''
 
