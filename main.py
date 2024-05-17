@@ -112,7 +112,7 @@ class Application(ctk.CTk):
             if file_type == "pdf":
                 self.show("Генерация конспекта для лекции с расширением PDF")
                 print("Генерация конспекта для лекции с расширением PDF")
-                self.sum_text, self.question_text = main(file_path)
+
                 add_pdf(self.sum_text + "\n\n" + self.question_text, new_title)
 
                 # Включение кнопки "Предпросмотр"
