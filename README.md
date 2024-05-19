@@ -26,7 +26,7 @@
 
 ## Требования 
 - Python 3.11
-- Пакеты: plyer, Text2ImageAPI, summa, nltk, sklearn, customtkinter
+- Пакеты: plyer, Text2ImageAPI, nltk, sklearn, customtkinter
 
 ## Автор
 Пегасин Андрей
