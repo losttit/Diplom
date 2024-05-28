@@ -20,7 +20,7 @@ def split_text(text, word_limit):
     return parts
 
 
-def bart_sum(lecture_text):  # Обученная модель машинного обучения, готовая
+def bart_sum(lecture_text):
     summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
     parts = split_text(lecture_text, 300)
     summaries = []

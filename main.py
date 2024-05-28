@@ -15,7 +15,13 @@ from nltk.stem import WordNetLemmatizer
 from CTkMessagebox import CTkMessagebox
 from PIL import Image
 
-ctk.set_appearance_mode("dark")  # dark, light
+# При первом запуске, убрать комментарии с 19-22 строки
+# import nltk
+# nltk.download('punkt')
+# nltk.download('wordnet')
+# nltk.download('stopwords')
+
+ctk.set_appearance_mode("light")  # dark, light
 ctk.set_default_color_theme("blue")  # blue, dark-blue, green
 
 
@@ -67,7 +73,7 @@ class Application(ctk.CTk):
         # Окно предпросмотра
         preview_window = ctk.CTkToplevel(self)
         preview_window.title("Предпросмотр")
-        preview_window.geometry("600x700")
+        preview_window.geometry("600x750")
 
         # Frame предпросмотра
         preview_frame = ctk.CTkFrame(preview_window)
@@ -112,7 +118,7 @@ class Application(ctk.CTk):
             if file_type == "pdf":
                 self.show("Генерация конспекта для лекции с расширением PDF")
                 print("Генерация конспекта для лекции с расширением PDF")
-
+                self.sum_text, self.question_text = main(file_path)
                 add_pdf(self.sum_text + "\n\n" + self.question_text, new_title)
 
                 # Включение кнопки "Предпросмотр"
@@ -161,8 +167,7 @@ def generate_questions(summary: str) -> list:
 
 def main(file_path):
     try:
-        docx_file_path = file_path
-        lecture_text = extract_text(docx_file_path)
+        lecture_text = extract_text(file_path)
         sum_text = bart_sum(lecture_text)
         parts = split_text(sum_text, 300)
         translated_parts = [translate_to_english(part) for part in parts]
