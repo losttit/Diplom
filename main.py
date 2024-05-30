@@ -79,10 +79,13 @@ class Application(ctk.CTk):
         preview_frame = ctk.CTkFrame(preview_window)
         preview_frame.pack(pady=20, padx=20)
 
-        # Загрузка изображения
-        image = ctk.CTkImage(light_image=Image.open("output/lecture.jpg"), size=(200, 200))
-        image_widget = ctk.CTkLabel(preview_frame, image=image, text="")
-        image_widget.pack(pady=10, padx=10)
+        # Загрузка изображения (если оно существует)
+        try:
+            image = ctk.CTkImage(light_image=Image.open("output/lecture.jpg"), size=(200, 200))
+            image_widget = ctk.CTkLabel(preview_frame, image=image, text="")
+            image_widget.pack(pady=10, padx=10)
+        except FileNotFoundError:
+            pass  # Изображение не было создано
 
         # Текстовая коробка для конспекта и теста
         summary_text_box = ctk.CTkTextbox(preview_frame, width=580, height=380)
@@ -118,8 +121,8 @@ class Application(ctk.CTk):
             if file_type == "pdf":
                 self.show("Генерация конспекта для лекции с расширением PDF")
                 print("Генерация конспекта для лекции с расширением PDF")
-                self.sum_text, self.question_text = main(file_path)
-                add_pdf(self.sum_text + "\n\n" + self.question_text, new_title)
+                self.sum_text, self.question_text, image_exists = main(file_path)
+                add_pdf(self.sum_text + "\n\n" + self.question_text, new_title, image_exists=image_exists)
 
                 # Включение кнопки "Предпросмотр"
                 self.preview_button.configure(state="normal")
@@ -128,8 +131,8 @@ class Application(ctk.CTk):
             elif file_type == "docx":
                 self.show("Генерация конспекта для лекции с расширением DOCX")
                 print("Генерация конспекта для лекции с расширением DOCX")
-                self.sum_text, self.question_text = main(file_path)
-                add_docx(self.sum_text + "\n\n" + self.question_text, new_title)
+                self.sum_text, self.question_text, image_exists = main(file_path)
+                add_docx(self.sum_text + "\n\n" + self.question_text, new_title, image_exists=image_exists)
 
                 # Включение кнопки "Предпросмотр"
                 self.preview_button.configure(state="normal")
@@ -174,16 +177,22 @@ def main(file_path):
         main_phrases = [get_main_phrase(part) for part in translated_parts]
         print(main_phrases)
 
-        # Генерация изображения
-        api = Text2ImageAPI('https://api-key.fusionbrain.ai/')
-        model_id = api.get_model()
-        uuid = api.generate(main_phrases, model_id)
-        images = api.check_generation(uuid)
-        for image in images:
-            image_base64 = image
-            image_data = base64.b64decode(image_base64)
-            with open("output/lecture.jpg", "wb") as file:
-                file.write(image_data)
+        image_exists = False
+        try:
+            # Генерация изображения
+            api = Text2ImageAPI('https://api-key.fusionbrain.ai/')
+            model_id = api.get_model()
+            uuid = api.generate(main_phrases, model_id)
+            images = api.check_generation(uuid)
+            for image in images:
+                image_base64 = image
+                image_data = base64.b64decode(image_base64)
+                with open("output/lecture.jpg", "wb") as file:
+                    file.write(image_data)
+            image_exists = True
+        except Exception as e:
+            print(f"Ошибка при генерации изображения: {e}")
+            CTkMessagebox(title="Ошибка", message="Сейчас API недоступно", icon="cancel")
 
         # Генерация вопросов
         questions = generate_questions(sum_text)
@@ -198,7 +207,7 @@ def main(file_path):
                 question_text += f"{string.ascii_lowercase[j - 1]}. {option}\n"
             question_text += "\n"
 
-        return sum_text, question_text
+        return sum_text, question_text, image_exists
     except Exception as e:
         print(f"Произошла ошибка: {e}")
         CTkMessagebox(title="Ошибка", message="Произошла ошибка", icon="cancel")

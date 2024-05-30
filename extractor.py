@@ -27,7 +27,7 @@ def extract_text(filename):
         return ''
 
 
-def add_docx(text, doc_name):
+def add_docx(text, doc_name, image_exists=True):
     # Сохранение лекции в формате DOCX
     if os.path.exists(doc_name):
         # Если файл с таким именем уже существует, удаляем его
@@ -37,15 +37,16 @@ def add_docx(text, doc_name):
         doc_name += '.docx'
     # Создаем новый документ DOCX
     doc = Document()
-    # Добавляем изображение в документ
-    doc.add_picture("output/lecture.jpg", width=Inches(6), height=Inches(6))
+    # Добавляем изображение в документ, если оно существует
+    if image_exists:
+        doc.add_picture("output/lecture.jpg", width=Inches(6), height=Inches(6))
     # Добавляем текст в документ
     doc.add_paragraph(text)
     # Сохраняем документ
     doc.save("output/" + doc_name)
 
 
-def add_pdf(text, pdf_name):
+def add_pdf(text, pdf_name, image_exists=True):
     # Сохранение лекции в формате PDF
     if os.path.exists(pdf_name):
         # Если файл с таким именем уже существует, удаляем его
@@ -60,10 +61,11 @@ def add_pdf(text, pdf_name):
     # Устанавливаем шрифт и размер текста
     pdf.add_font("DejaVuSans", "", "resources/DejaVuSans.ttf", uni=True)
     pdf.set_font("DejaVuSans", "", 12)
-    # Добавляем изображение в документ
-    pdf.image("output/lecture.jpg", x=10, y=10, w=190, h=190)
+    # Добавляем изображение в документ, если оно существует
+    if image_exists:
+        pdf.image("output/lecture.jpg", x=10, y=10, w=190, h=190)
+        pdf.ln(200)
     # Добавляем текст в документ
-    pdf.ln(200)
     pdf.multi_cell(0, 10, txt=text, align='L')
     # Сохраняем документ
     pdf.output("output/" + pdf_name)
