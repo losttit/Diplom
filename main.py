@@ -23,8 +23,8 @@ import concurrent.futures  # Параллельное выполнение за�
 # nltk.download('wordnet')
 # nltk.download('stopwords')
 
-ctk.set_appearance_mode("light")  # Режим отображения
-ctk.set_default_color_theme("blue")  # Тема приложения
+ctk.set_appearance_mode("light")  # Режим отображения: dark, light
+ctk.set_default_color_theme("blue")  # Тема приложения: blue, dark-blue, green
 
 
 class Application(ctk.CTk):
@@ -100,6 +100,7 @@ class Application(ctk.CTk):
 
     @staticmethod
     def show(message):
+        # Функция для вывода уведомлений
         notification.notify(title="Генератор конспектов", message=message, app_icon="resources/summary.ico",
                             timeout=1)  # Системное уведомление
 
@@ -141,6 +142,7 @@ class Application(ctk.CTk):
 
 
 def get_main_phrase(text: str) -> str:
+    # Извлечение ключевых фраз из текста
     lemmatizer = WordNetLemmatizer()
     text = ' '.join([lemmatizer.lemmatize(word) for word in word_tokenize(text)])  # Лемматизация текста
     vectorizer = TfidfVectorizer(max_features=2, stop_words=stopwords.words('english'))
@@ -150,6 +152,7 @@ def get_main_phrase(text: str) -> str:
 
 
 def generate_questions(summary: str) -> list:
+    # Генерация вопросов из конспекта
     sentences = sent_tokenize(summary)  # Разделение текста на предложения
     questions = []
     for sentence in sentences:
@@ -194,9 +197,9 @@ def main(file_path):
                     file.write(image_data)
             image_exists = True
         except Exception as e:
-            print(f"Ошибка при генерации изображения: API в данный момент недоступно")
+            print(f"Ошибка при генерации изображения: {e}. API в данный момент недоступно")
             CTkMessagebox(title="Внимание", message="Сейчас API недоступно, генерация изображения невозможна",
-                          icon="warning")  # Сообщение об ошибке генерации изображения
+                          icon="warning")
 
         questions = generate_questions(sum_text)  # Генерация вопросов по конспекту
         all_words = [word for word in word_tokenize(sum_text) if word.isalpha()]
