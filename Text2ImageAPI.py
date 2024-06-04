@@ -4,7 +4,7 @@ import requests
 
 
 class Text2ImageAPI:
-    def __init__(self, url, api_key='76E51110C814D535B84232B1AFB3021', secret_key='5107BCE6311486302B7DEBC69F361E39'):
+    def __init__(self, url, api_key='42F052259218288DF21AB31B08D7409E', secret_key='2707A86E9C448FA9896903F94AC9313B'):
         # Инициализируем URL-адрес API и заголовки аутентификации
         self.URL = url
         self.AUTH_HEADERS = {
