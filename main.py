@@ -17,8 +17,10 @@ from CTkMessagebox import CTkMessagebox  # Пользовательские ок
 from PIL import Image  # Библиотека для обработки изображений
 import concurrent.futures  # Параллельное выполнение задач
 
-# При первом запуске, убрать комментарии с 19-22 строки
-# import nltk
+import nltk
+# Проверка установлен ли nltk
+nltk.corpus.wordnet.ensure_loaded()
+# При первом запуске, убрать комментарии с 24-26 строки
 # nltk.download('punkt')
 # nltk.download('wordnet')
 # nltk.download('stopwords')
@@ -142,28 +144,44 @@ class Application(ctk.CTk):
 
 
 def get_main_phrase(text: str) -> str:
-    # Извлечение ключевых фраз из текста
-    lemmatizer = WordNetLemmatizer()
-    text = ' '.join([lemmatizer.lemmatize(word) for word in word_tokenize(text)])  # Лемматизация текста
-    vectorizer = TfidfVectorizer(max_features=2, stop_words=stopwords.words('english'))
-    tfidf_matrix = vectorizer.fit_transform([text])  # Векторизация текста
-    feature_names = vectorizer.get_feature_names_out()
-    return ' '.join(feature_names)
+    try:
+        # Инициализация необходимых компонентов
+        lemmatizer = WordNetLemmatizer()
+        stop_words = set(stopwords.words('english'))
+        # Токенизация текста
+        words = word_tokenize(text.lower())
+        # Лемматизация и удаление стоп-слов
+        lemmatized_words = [lemmatizer.lemmatize(word) for word in words if word.isalnum() and word not in stop_words]
+        # Объединение лемматизированных слов обратно в строку
+        processed_text = ' '.join(lemmatized_words)
+        # Векторизация текста
+        vectorizer = TfidfVectorizer(max_features=2)
+        tfidf_matrix = vectorizer.fit_transform([processed_text])
+        # Получение ключевых фраз
+        feature_names = vectorizer.get_feature_names_out()
+        return ' '.join(feature_names)
+    except Exception as e:
+        print(f"Ошибка в get_main_phrase: {e}")
+        return ""
 
 
 def generate_questions(summary: str) -> list:
-    # Генерация вопросов из конспекта
-    sentences = sent_tokenize(summary)  # Разделение текста на предложения
-    questions = []
-    for sentence in sentences:
-        words = [word for word in word_tokenize(sentence) if
-                 word.isalpha() and len(word) > 2]  # Токенизация и фильтрация слов
-        if len(words) > 5:
-            random_word = random.choice(words)  # Выбор случайного слова
-            word_pattern = r'\b' + re.escape(random_word) + r'\b'
-            question = re.sub(word_pattern, '_____', sentence)  # Замена слова на пустое место
-            questions.append((question, random_word))
-    return questions
+    try:
+        # Генерация вопросов из конспекта
+        sentences = sent_tokenize(summary)  # Разделение текста на предложения
+        questions = []
+        for sentence in sentences:
+            words = [word for word in word_tokenize(sentence) if
+                     word.isalpha() and len(word) > 2]  # Токенизация и фильтрация слов
+            if len(words) > 5:
+                random_word = random.choice(words)  # Выбор случайного слова
+                word_pattern = r'\b' + re.escape(random_word) + r'\b'
+                question = re.sub(word_pattern, '_____', sentence)  # Замена слова на пустое место
+                questions.append((question, random_word))
+        return questions
+    except Exception as e:
+        print(f"Ошибка в generate_questions: {e}")
+        return []
 
 
 def main(file_path):
@@ -179,25 +197,28 @@ def main(file_path):
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             translated_parts = list(executor.map(translate_to_english, parts))  # Параллельный перевод частей текста
-            main_phrases = list(
-                executor.map(get_main_phrase, translated_parts))  # Параллельное извлечение ключевых фраз
+            main_phrases = list(executor.map(get_main_phrase, translated_parts))  # Параллельное извлечение ключевых фраз
 
         image_exists = False
         try:
             api = Text2ImageAPI('https://api-key.fusionbrain.ai/')  # Инициализация API для генерации изображений
             model_id = api.get_model()
+            print(f"Основные фразы: {main_phrases}")
             uuid = api.generate(main_phrases, model_id)
             images = api.check_generation(uuid)
 
-            # Сохранение нового изображения
-            for image in images:
-                image_base64 = image
-                image_data = base64.b64decode(image_base64)
-                with open(image_path, "wb") as file:
-                    file.write(image_data)
-            image_exists = True
+            if images:
+                # Сохранение нового изображения
+                for image in images:
+                    image_base64 = image
+                    image_data = base64.b64decode(image_base64)
+                    with open(image_path, "wb") as file:
+                        file.write(image_data)
+                image_exists = True
+            else:
+                raise Exception(" API в данный момент недоступно")
         except Exception as e:
-            print(f"Ошибка при генерации изображения: {e}. API в данный момент недоступно")
+            print(f"Ошибка при генерации изображения: {e}.")
             CTkMessagebox(title="Внимание", message="Сейчас API недоступно, генерация изображения невозможна",
                           icon="warning")
 
@@ -217,6 +238,8 @@ def main(file_path):
     except Exception as e:
         print(f"Произошла ошибка: {e}")
         CTkMessagebox(title="Ошибка", message="Произошла ошибка", icon="cancel")  # Сообщение об ошибке
+        return None, None, None  # Возвращение значений None во избежание ошибки распаковки
+
 
 
 if __name__ == "__main__":
